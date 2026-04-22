@@ -1,8 +1,7 @@
 using UnityEngine;
+using UnityEngine.UI; // [추가] Sprite를 사용하기 위해 필요
 using System.Collections;
 using System.Collections.Generic;
-
-
 
 public class CardGame : MonoBehaviour
 {
@@ -11,9 +10,15 @@ public class CardGame : MonoBehaviour
     public GameObject cardPrefab; // 카드 프리팹 연결
     public Transform cardParent; // 카드가 생성될 부모 (Grid Layout Group이 있는 오브젝트)
 
+    // [추가] 카드 앞면에 보여줄 그림(Sprite)들의 목록을 인스펙터에서 넣어주세요.
+    // 최소한 pairCount의 개수만큼 그림이 필요합니다.
+    public List<Sprite> cardSprites;
+
     private List<Card> cards = new List<Card>(); // 생성된 카드들을 담을 리스트
     private Card firstCard = null;
     private Card secondCard = null;
+
+    // 기본값을 true로 두어 시작 연출 전엔 클릭 차단
     public bool isChecking = true;
 
     void Start()
@@ -22,14 +27,19 @@ public class CardGame : MonoBehaviour
         StartGame();  // 게임 로직 시작
     }
 
-    // [추가된 기능] 카드 프리팹을 개수만큼 생성
     private void SetupCards()
     {
+        // [안전장치 추가] 그림 개수가 충분한지 확인
+        if (cardSprites == null || cardSprites.Count < pairCount)
+        {
+            Debug.LogError($"Error: Not enough Sprites in 'Card Sprites' list. Need {pairCount}, but only have {(cardSprites == null ? 0 : cardSprites.Count)}.");
+            return;
+        }
+
         int totalCards = pairCount * 2;
 
         for (int i = 0; i < totalCards; i++)
         {
-            // 프리팹 생성 및 부모 설정
             GameObject newCardObj = Instantiate(cardPrefab, cardParent);
             Card cardScript = newCardObj.GetComponent<Card>();
 
@@ -48,7 +58,11 @@ public class CardGame : MonoBehaviour
 
         for (int i = 0; i < cards.Count; i++)
         {
-            cards[i].SetCardNumber(randomPairNumbers[i]);
+            int pairId = randomPairNumbers[i]; // 이 카드의 페어 ID (0,0,1,1,...)
+
+            // [수정] 카드 스크립트의 새 함수를 호출하며 숫자와 그 ID에 맞는 그림을 같이 전달
+            // 페어 ID가 곧 그림 리스트의 인덱스가 됩니다.
+            cards[i].SetCard(pairId, cardSprites[pairId]);
         }
 
         StartCoroutine(ShowCardsAtStart());
